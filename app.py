@@ -37,12 +37,14 @@ def serve_lua(filename):
 
 @app.route('/api/games_index.json')
 def serve_index():
-    """Serve the games index JSON file - should be downloaded from GitHub Releases"""
-    # This endpoint returns a redirect message since the index is in GitHub Releases
-    return jsonify({
-        'error': 'Index not available on server',
-        'message': 'Download from GitHub Releases: https://github.com/YOUR_USERNAME/YOUR_REPO/releases/latest/download/games_index.json'
-    }), 404
+    """Serve the games index JSON file"""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    index_path = os.path.join(base_dir, 'games_index.json')
+    
+    if os.path.exists(index_path):
+        return send_from_directory(base_dir, 'games_index.json', mimetype='application/json')
+    
+    abort(404, description="games_index.json not found. Run generate_index.py first.")
 
 
 @app.route('/api/check/<app_id>')
