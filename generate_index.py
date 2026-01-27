@@ -221,72 +221,101 @@ def fetch_names_from_store_api(app_ids):
     start_time = time.time()  # Track start time for timeout
     
     for i, app_id in enumerate(app_ids):
-        params = {
-            "appids": app_id,
-            "filters": "basic"
-        }
+        # Progress indication
+        progress_pct = (i + 1) / total * 100
+        print(f"[{progress_pct:.1f}%] Fetching {i + 1}/{total}: AppID {app_id}...", end=" ")
         
-        try:
-            progress_pct = (i + 1) / total * 100
-            print(f"[{progress_pct:.1f}%] Fetching {i + 1}/{total}: AppID {app_id}...", end=" ")
-            response = requests.get(base_url, params=params, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data and str(app_id) in data:
-                    details = data[str(app_id)]
-                    if details.get("success") and "data" in details:
-                        _extracted_names[str(app_id)] = details["data"]["name"]
-                        print(f"-> {_extracted_names[str(app_id)]}")
-                    else:
-                        print("-> No data (app may be removed)")
-                else:
-                    print("-> Not found")
-            elif response.status_code == 429:
-                print("-> Rate limited! Waiting 30 seconds...")
-                time.sleep(30)
-                continue  # Retry this app
-            else:
-                print(f"-> Error {response.status_code}")
-            
-            _completed_ids.append(app_id)
-            
-            # Save progress periodically
-            if (i + 1) % save_interval == 0:
-                elapsed = time.time() - start_time
-                elapsed_hours = elapsed / 3600
-                print(f"\n--- Saving progress ({len(_extracted_names)} names fetched, {elapsed_hours:.1f}h elapsed) ---\n")
-                with open(_progress_file, 'w') as f:
-                    json.dump({
-                        'names': _extracted_names,
-                        'completed_ids': _completed_ids
-                    }, f)
-            
-            # Check for timeout (5 hours)
-            elapsed = time.time() - start_time
-            if elapsed >= MAX_RUNTIME_SECONDS:
-                print(f"\n\n=== 5 HOUR TIMEOUT REACHED ===")
-                print(f"Saving progress and exiting...")
+        # Define sources to try in order
+        # Source 1: Steam Store API (Official, reliable but rate limited)
+        # Source 2: SteamSpy API (Unofficial, good fallback)
+        sources = [
+            ("Store", f"https://store.steampowered.com/api/appdetails?appids={app_id}"),
+            ("SteamSpy", f"https://steamspy.com/api.php?request=appdetails&appid={app_id}")
+        ]
+        
+        fetched_name = None
+        
+        for source_name, url in sources:
+            try:
+                # Different headers/params might be needed per source
+                # Common headers
+                req_headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
                 
-                # 1. Save fetch progress
-                with open(_progress_file, 'w') as f:
-                    json.dump({
-                        'names': _extracted_names,
-                        'completed_ids': _completed_ids
-                    }, f)
+                # Fetch
+                response = requests.get(url, headers=req_headers, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
                     
-                # 2. Save games_index.json
-                # Merge base map with extracted names
-                final_map = _current_app_map.copy()
-                final_map.update(_extracted_names)
-                save_games_index(final_map)
-
-                print(f"Saved {len(_extracted_names)} names. Run script again to continue.")
-                return _extracted_names
+                    # Parse based on source
+                    if source_name == "Store":
+                        if data and str(app_id) in data:
+                            details = data[str(app_id)]
+                            if details.get("success") and "data" in details:
+                                fetched_name = details["data"]["name"]
+                                
+                    elif source_name == "SteamSpy":
+                        # SteamSpy format: {"appid": 123, "name": "Game Name", ...}
+                        if data and "name" in data:
+                            fetched_name = data["name"]
+                            
+                    if fetched_name:
+                        print(f"-> Found via {source_name}: {fetched_name}")
+                        _extracted_names[str(app_id)] = fetched_name
+                        break # Stop trying sources
                 
-            time.sleep(1)  # Rate limit protection (1 second between requests)
-        except Exception as e:
-            print(f"-> Error: {e}")
+                elif response.status_code == 429:
+                     print(f"-> {source_name} Rate Limit! Waiting 10s...", end=" ")
+                     time.sleep(10)
+                else:
+                    # Fail silently for this source, try next
+                    pass
+
+            except Exception as e:
+                # Error with this source, try next
+                pass
+        
+        if not fetched_name:
+             print("-> Failed (all sources)")
+        
+        _completed_ids.append(app_id)
+        
+        # Save progress periodically
+        if (i + 1) % save_interval == 0:
+            elapsed = time.time() - start_time
+            elapsed_hours = elapsed / 3600
+            print(f"\n--- Saving progress ({len(_extracted_names)} names fetched, {elapsed_hours:.1f}h elapsed) ---\n")
+            with open(_progress_file, 'w') as f:
+                json.dump({
+                    'names': _extracted_names,
+                    'completed_ids': _completed_ids
+                }, f)
+        
+        # Check for timeout (5 hours)
+        elapsed = time.time() - start_time
+        if elapsed >= MAX_RUNTIME_SECONDS:
+            print(f"\n\n=== 5 HOUR TIMEOUT REACHED ===")
+            print(f"Saving progress and exiting...")
+            
+            # 1. Save fetch progress
+            with open(_progress_file, 'w') as f:
+                json.dump({
+                    'names': _extracted_names,
+                    'completed_ids': _completed_ids
+                }, f)
+                
+            # 2. Save games_index.json
+            # Merge base map with extracted names
+            final_map = _current_app_map.copy()
+            final_map.update(_extracted_names)
+            save_games_index(final_map)
+
+            print(f"Saved {len(_extracted_names)} names. Run script again to continue.")
+            return _extracted_names
+            
+        time.sleep(1)  # Rate limit protection (1 second between requests)
     
     # Final save
     with open(_progress_file, 'w') as f:
