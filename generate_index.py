@@ -62,6 +62,7 @@ def get_steam_app_map():
                 return app_map
             else:
                 print(f"Failed {url} with status {response.status_code}")
+                print(f"Response content: {response.text[:500]}")
         except Exception as e:
             print(f"Error fetching from {url}: {e}")
             
@@ -97,17 +98,25 @@ def fetch_names_from_store_api(app_ids):
         try:
             print(f"Fetching {i + 1}/{len(app_ids)}: AppID {app_id}...")
             response = requests.get(base_url, params=params, headers=headers, timeout=10)
+            print(f"  Response status: {response.status_code}")
+            print(f"  Response content: {response.text[:300]}...")
             if response.status_code == 200:
                 data = response.json()
                 if data and str(app_id) in data:
                     details = data[str(app_id)]
                     if details.get("success") and "data" in details:
                         extracted_names[str(app_id)] = details["data"]["name"]
+                        print(f"  Found name: {extracted_names[str(app_id)]}")
+                    else:
+                        print(f"  App details not successful or missing data")
+                else:
+                    print(f"  AppID {app_id} not found in response")
             elif response.status_code == 429:
                 print("Rate limit hit. Waiting 10 seconds...")
                 time.sleep(10)
             else:
                 print(f"Store API returned {response.status_code} for {app_id}.")
+                print(f"  Response content: {response.text[:300]}")
                 
             time.sleep(0.5) # Rate limit protection
         except Exception as e:
