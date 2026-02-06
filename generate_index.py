@@ -39,7 +39,18 @@ _stop_flag = False        # Flag to stop all threads
 def save_games_index(app_map):
     """Generate and write the games_index.json file."""
     games_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games')
+    fix_files_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'game-fix-files')
     games_list = []
+    
+    # Get list of available fix files
+    fix_files = set()
+    if os.path.exists(fix_files_dir):
+        for filename in os.listdir(fix_files_dir):
+            if filename.endswith('.zip'):
+                fix_files.add(filename[:-4])  # Remove .zip extension
+    
+    if fix_files:
+        print(f"Found {len(fix_files)} game fix files: {fix_files}")
     
     if os.path.exists(games_dir):
         for filename in os.listdir(games_dir):
@@ -49,7 +60,8 @@ def save_games_index(app_map):
                 
                 games_list.append({
                     "id": app_id,
-                    "name": name
+                    "name": name,
+                    "has_fix": app_id in fix_files
                 })
     
     games_list.sort(key=lambda x: x['name'])
