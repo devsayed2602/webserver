@@ -39443,7 +39443,7 @@
     {
       "id": "203680",
       "name": "F1 RACE STARS",
-      "has_fix": false
+      "has_fix": true
     },
     {
       "id": "3059520",
@@ -141707,5 +141707,5 @@
     }
   ],
   "count": 28341,
-  "last_updated": 1770645333
+  "last_updated": 1770652520
 }
