@@ -187,7 +187,7 @@ def clone_or_update(clone_dir):
     start = time.time()
 
     ok, _ = run_live(
-        ["git", "clone", "--no-checkout", "--progress", REPO_URL, clone_dir],
+        ["git", "clone", "--filter=blob:none", "--no-checkout", "--progress", REPO_URL, clone_dir],
         label="Clone"
     )
 
