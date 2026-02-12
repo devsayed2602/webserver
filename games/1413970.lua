@@ -5,5 +5,3 @@ addappid(1413972,0,"43c0d633fff76254892032fa3ef630eaf95fba5059fef30c0c1165d68687
 setManifestid(1413972,"5587029695341486369")
 addappid(1413973,0,"7fbff9e053a91028c2ba0f6390071193dbd142cca9d29c8d3eefa7084403c181")
 setManifestid(1413973,"6486187920424551623")
-
--- credits to v80qk on discord dont put on ur own bot have some shame (yk urself)
