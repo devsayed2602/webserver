@@ -1,0 +1,42 @@
+name: Update Games and Index
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *' # At 00:00 on day-of-month 1.
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  update-games:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Manifest Grabber
+        run: |
+          python mainfest.py --cleanup
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update game manifests [skip ci]"
+          file_pattern: games/*.lua
+          branch: main
+
+      - name: Trigger Index Generation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run generate-index.yml
