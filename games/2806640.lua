@@ -1,10 +1,5 @@
 addappid(2806640)
+setManifestid(228989,"3514306556860204959")
+setManifestid(228990,"1829726630299308803")
 addappid(2806641,0,"7608c9835511431b6d95c5aa29bcb269f2cc727e99109c084e19dadb256a25a5")
---setManifestid(2806641,"4256792438761350905")
-
-
-
---[[
-This file belongs to Ahmeds Bot Discord Server
------> join discord Server : https://discord.gg/sv6EGxCRnC
-]]
+setManifestid(2806641,"6826186526274491707")

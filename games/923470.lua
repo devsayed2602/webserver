@@ -1,7 +1,3 @@
--- This file was fetched from twentytwo cloud which is the exclusive property of Twentytwo server.
--- Redistribution of twentytwo's files is not allowed AT ALL
--- Join the server here: https://discord.com/invite/vwGWeTFTXW
-
 addappid(923470)
 addappid(923471,0,"0ba9e7aec2f61c70bef550761d27cdf016ee1f5893261b7457d87f367d3d5128")
 setManifestid(923471,"344319781343629961")
