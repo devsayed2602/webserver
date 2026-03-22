@@ -1,0 +1,9 @@
+
+-- MAIN APPLICATION
+addappid(3321460) -- Crimson Desert
+-- MAIN APP DEPOTS
+addappid(3321461, 1, "e2e570c84eb8b4cfe9c20268cd30b84f8c1c7c076691c92ae8c5ba7b510b8a95") -- Depot 3321461
+setManifestid(3321461, "8775153285106940722", 133241499472)
+-- SHARED DEPOTS (from other apps)
+addappid(228989, 1, "ad69276eb476cf06c40312df7376d63deac0c838b9a2767005be8bb306ffb853") -- VC 2022 Redist (Shared from App 228980)
+setManifestid(228989, "3514306556860204959", 39590283)
