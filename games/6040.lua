@@ -1,21 +1,18 @@
-addappid(6040)
-addappid(6046,0,"9d02ce25e96df581cb4036ecb551d4023607a4a2f1e00c36c5b6d99c280ba3ab")
-setManifestid(6046,"7732113752385015727")
-addappid(6041,0,"7a1d68ef39805b8798e7c1c1b67d398c4bca516ebe77631e2b12f7ec5aa767c0")
-setManifestid(6041,"1789070211921735766")
-addappid(6042,0,"72de67a01787b9e926d0f17f15df4d0c83fe68436071b05aa1807e2419648429")
-setManifestid(6042,"2660090399011030613")
-addappid(6043,0,"6ee8fe57e3c0705538793f992d6e1767dfba9183f8384c48e4130202b4138213")
-setManifestid(6043,"1340424910224179055")
-addappid(6044,0,"0dbe819c0556d69717e9d7692a1aaa0f3902a979d88fd0beb858e1c94947c7b6")
-setManifestid(6044,"2783711272053658241")
-addappid(6045,0,"462d69df22bdff3962145bdb8abc7f9ddd420cbaf5a20b23b089efb80785a631")
-setManifestid(6045,"4638604101985011288")
-addappid(6047,0,"b1ecfddee9b47da537396804e439f375bad84ad7264dc6d5c3ab62673b083982")
-setManifestid(6047,"1431615808513588211")
-addappid(6048,0,"6e2f694f9a91a662cff54a072c57f7f6d99681900e200c496154f45f8206f005")
-setManifestid(6048,"8087028762795260581")
-addappid(6049,0,"ee020b7072d3771b6bd149c4ce2f8ffc8375fb6b206fccbacd3350f3530b9f69")
-setManifestid(6049,"6814201874297486313")
-addappid(904030,0,"2bd3f4a7fe541ce58b6e1af516d6924b42f27ea9d0468ca9d2ef50f406bb5a36")
-setManifestid(904030,"1222463590464954604")
+-- The​​‌‌​​​​​​‌‌‌​​​​‌‌​​‌​​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​​​​​‌‌​​‌​​​​‌‌​​​​​‌‌​​‌​‌​​‌‌​‌​​​‌‌​​‌​‌​​‌‌​‌​‌​​‌‌​​‌​​​‌‌​​‌​​​‌‌​‌‌​​​‌‌​‌​‌ Dig
+-- AppID 6040 | Generated on 2026-02-02 15:07 UTC | openlua.cloud
+-- Note: This game supports Steam Workshop content
+
+-- Main Application
+addappid(6040, 1, "e595739da8371841a566003487760b4add5c792eb261930e4486103350d939c3")
+
+-- Content Depots (10)
+addappid(6041, 1, "7a1d68ef39805b8798e7c1c1b67d398c4bca516ebe77631e2b12f7ec5aa767c0") -- The Dig_content
+addappid(6042, 1, "72de67a01787b9e926d0f17f15df4d0c83fe68436071b05aa1807e2419648429") -- The Dig French
+addappid(6043, 1, "6ee8fe57e3c0705538793f992d6e1767dfba9183f8384c48e4130202b4138213") -- The Dig German
+addappid(6044, 1, "0dbe819c0556d69717e9d7692a1aaa0f3902a979d88fd0beb858e1c94947c7b6") -- The Dig Italian
+addappid(6045, 1, "462d69df22bdff3962145bdb8abc7f9ddd420cbaf5a20b23b089efb80785a631") -- The Dig Spanish
+addappid(6046, 1, "9d02ce25e96df581cb4036ecb551d4023607a4a2f1e00c36c5b6d99c280ba3ab") -- the_dig_mac_content
+addappid(6047, 1, "b1ecfddee9b47da537396804e439f375bad84ad7264dc6d5c3ab62673b083982") -- The Dig Mac French
+addappid(6048, 1, "6e2f694f9a91a662cff54a072c57f7f6d99681900e200c496154f45f8206f005") -- The Dig Mac German
+addappid(6049, 1, "ee020b7072d3771b6bd149c4ce2f8ffc8375fb6b206fccbacd3350f3530b9f69") -- The Dig Mac Italian
+addappid(904030, 1, "2bd3f4a7fe541ce58b6e1af516d6924b42f27ea9d0468ca9d2ef50f406bb5a36") -- The Dig Mac Spanish

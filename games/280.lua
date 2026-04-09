@@ -41,4 +41,8 @@ addappid(231)
 setManifestid(231,"6094809064806846880")
 addappid(232)
 setManifestid(232,"5674666767121162923")
-addappid(326870)
+
+--[[
+This file Generated using fares.top Website 
+-----> join discord Server : https://discord.gg/steamgames 
+]]

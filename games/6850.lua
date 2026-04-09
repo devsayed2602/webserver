@@ -1,3 +1,8 @@
 addappid(6850)
-addappid(6851,0,"f208fc795032e395aa6126f8b1a18ed8b33cbc5b6a78ef1469b0e3c957993169")
-setManifestid(6851,"700716739054035217")
+addappid(6851, 1, "f208fc795032e395aa6126f8b1a18ed8b33cbc5b6a78ef1469b0e3c957993169")
+setManifestid(6851, "700716739054035217", 0)
+
+--[[
+This file Generated using fares.top Website 
+-----> join discord Server : https://discord.gg/steamgames 
+]]

@@ -13,3 +13,8 @@ addappid(47786,0,"08335766618a842c60538ca2a1753f67d4b482ff33cd4bf25e7f796a58f276
 setManifestid(47786,"4659950238017740632")
 addappid(47787,0,"9d7535157c9cd11ad25b7799e5c5515acc0d4940744cae1ce54862e2007d745b")
 setManifestid(47787,"2671796994812695864")
+
+--[[
+This file Generated using fares.top Website 
+-----> join discord Server : https://discord.gg/steamgames 
+]]
