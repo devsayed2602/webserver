@@ -5,6 +5,8 @@ Flask application to serve Lua files for the Steam Lua Patcher desktop app.
 
 from flask import Flask, send_from_directory, jsonify, abort, request, Response
 import os
+import zipfile
+import threading
 from functools import wraps
 from dotenv import load_dotenv
 
@@ -21,10 +23,28 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
 if not ACCESS_TOKEN or not ADMIN_PASSWORD:
     print("WARNING: SERVER_ACCESS_TOKEN or ADMIN_PASSWORD not set in environment!")
 
-# Directory containing all Lua game files
+# Directory containing all Lua game files (used locally or if ZIP is missing)
 GAMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games')
+# Path to the games ZIP archive (used in production/Vercel)
+GAMES_ZIP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games.zip')
 # Directory containing game fix zip files
 FIX_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'game-fix-files')
+
+# Global cache for the zip file handle to improve performance
+_games_zip = None
+_games_zip_lock = threading.Lock()
+
+def get_games_zip():
+    """Get or open the games.zip file handle in a thread-safe manner."""
+    global _games_zip
+    if _games_zip is None:
+        with _games_zip_lock:
+            if _games_zip is None and os.path.exists(GAMES_ZIP_PATH):
+                try:
+                    _games_zip = zipfile.ZipFile(GAMES_ZIP_PATH, 'r')
+                except Exception as e:
+                    print(f"Error opening {GAMES_ZIP_PATH}: {e}")
+    return _games_zip
 
 def require_token(f):
     @wraps(f)
@@ -180,6 +200,18 @@ def serve_lua(filename):
     if not filename.endswith('.lua'):
         filename = f"{filename}.lua"
     
+    # Try serving from ZIP file first (Vercel/Production)
+    zf = get_games_zip()
+    if zf:
+        try:
+            # Check if file exists in ZIP
+            if filename in zf.namelist():
+                content = zf.read(filename)
+                return Response(content, mimetype='text/plain')
+        except Exception as e:
+            print(f"Error reading {filename} from ZIP: {e}")
+
+    # Fallback to local filesystem (Development)
     file_path = os.path.join(GAMES_DIR, filename)
     if not os.path.exists(file_path):
         abort(404, description=f"Lua file '{filename}' not found")
@@ -218,8 +250,19 @@ def serve_index():
 @require_token
 def check_availability(app_id):
     """Check if a specific app ID has a Lua file available"""
-    file_path = os.path.join(GAMES_DIR, f"{app_id}.lua")
-    exists = os.path.exists(file_path)
+    filename = f"{app_id}.lua"
+    exists = False
+    
+    # Check ZIP first
+    zf = get_games_zip()
+    if zf:
+        exists = filename in zf.namelist()
+    
+    # Fallback to filesystem
+    if not exists:
+        file_path = os.path.join(GAMES_DIR, filename)
+        exists = os.path.exists(file_path)
+        
     return jsonify({
         'app_id': app_id,
         'available': exists

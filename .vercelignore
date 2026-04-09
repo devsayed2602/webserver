@@ -1,0 +1,11 @@
+# Exclude large games directory (contains 66k+ files)
+games/
+
+# Standard excludes
+.git/
+.github/
+.vercel/
+.env
+__pycache__/
+*.pyc
+node_modules/

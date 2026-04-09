@@ -33,6 +33,9 @@ jobs:
 
       - name: Generate games index
         run: python generate_index.py
+
+      - name: Create games.zip archive
+        run: python zip_games.py
       
       - name: Pull remote changes
         run: |
@@ -42,8 +45,8 @@ jobs:
           git pull --rebase origin main || true
           git stash pop || true
 
-      - name: Commit and push updated index
+      - name: Commit and push updated index and zip
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-update games_index.json"
-          file_pattern: games_index.json
+          commit_message: "chore: auto-update games_index.json and games.zip"
+          file_pattern: "games_index.json games.zip"
