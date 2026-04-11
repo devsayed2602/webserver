@@ -5,10 +5,11 @@ Flask application to serve Lua files for the Steam Lua Patcher desktop app.
 
 from flask import Flask, send_from_directory, jsonify, abort, request, Response
 import os
-import zipfile
-import threading
+import json
+from datetime import datetime
 from functools import wraps
 from dotenv import load_dotenv
+from upstash_redis import Redis
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,35 +17,29 @@ load_dotenv()
 app = Flask(__name__)
 
 # Security configuration
-# These should be set as environment variables in Vercel/Production or in a .env file locally
+# These should be set as environment variables in Vercel/Netlify/Production or in a .env file locally
 ACCESS_TOKEN = os.environ.get('SERVER_ACCESS_TOKEN')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
 
 if not ACCESS_TOKEN or not ADMIN_PASSWORD:
     print("WARNING: SERVER_ACCESS_TOKEN or ADMIN_PASSWORD not set in environment!")
 
-# Directory containing all Lua game files (used locally or if ZIP is missing)
+# Upstash Redis
+REDIS_URL = os.environ.get('UPSTASH_REDIS_REST_URL')
+REDIS_TOKEN = os.environ.get('UPSTASH_REDIS_REST_TOKEN')
+redis_client = None
+if REDIS_URL and REDIS_TOKEN:
+    try:
+        redis_client = Redis(url=REDIS_URL, token=REDIS_TOKEN)
+    except Exception as e:
+        print(f"WARNING: Could not connect to Upstash Redis: {e}")
+else:
+    print("WARNING: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not set!")
+
+# Directory containing all Lua game files
 GAMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games')
-# Path to the games ZIP archive (used in production/Vercel)
-GAMES_ZIP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games.zip')
 # Directory containing game fix zip files
 FIX_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'game-fix-files')
-
-# Global cache for the zip file handle to improve performance
-_games_zip = None
-_games_zip_lock = threading.Lock()
-
-def get_games_zip():
-    """Get or open the games.zip file handle in a thread-safe manner."""
-    global _games_zip
-    if _games_zip is None:
-        with _games_zip_lock:
-            if _games_zip is None and os.path.exists(GAMES_ZIP_PATH):
-                try:
-                    _games_zip = zipfile.ZipFile(GAMES_ZIP_PATH, 'r')
-                except Exception as e:
-                    print(f"Error opening {GAMES_ZIP_PATH}: {e}")
-    return _games_zip
 
 def require_token(f):
     @wraps(f)
@@ -200,18 +195,6 @@ def serve_lua(filename):
     if not filename.endswith('.lua'):
         filename = f"{filename}.lua"
     
-    # Try serving from ZIP file first (Vercel/Production)
-    zf = get_games_zip()
-    if zf:
-        try:
-            # Check if file exists in ZIP
-            if filename in zf.namelist():
-                content = zf.read(filename)
-                return Response(content, mimetype='text/plain')
-        except Exception as e:
-            print(f"Error reading {filename} from ZIP: {e}")
-
-    # Fallback to local filesystem (Development)
     file_path = os.path.join(GAMES_DIR, filename)
     if not os.path.exists(file_path):
         abort(404, description=f"Lua file '{filename}' not found")
@@ -250,23 +233,68 @@ def serve_index():
 @require_token
 def check_availability(app_id):
     """Check if a specific app ID has a Lua file available"""
-    filename = f"{app_id}.lua"
-    exists = False
-    
-    # Check ZIP first
-    zf = get_games_zip()
-    if zf:
-        exists = filename in zf.namelist()
-    
-    # Fallback to filesystem
-    if not exists:
-        file_path = os.path.join(GAMES_DIR, filename)
-        exists = os.path.exists(file_path)
-        
+    file_path = os.path.join(GAMES_DIR, f"{app_id}.lua")
+    exists = os.path.exists(file_path)
     return jsonify({
         'app_id': app_id,
         'available': exists
     })
+
+
+@app.route('/api/user/check/<username>')
+def check_username(username):
+    """Check if a username is available"""
+    if not redis_client:
+        return jsonify({'error': 'Database unavailable'}), 503
+    
+    if not username or len(username) < 3 or len(username) > 20:
+        return jsonify({'available': False, 'error': 'Username must be 3-20 characters'}), 400
+    
+    key = f"users:name:{username.lower()}"
+    existing = redis_client.get(key)
+    return jsonify({
+        'username': username,
+        'available': existing is None
+    })
+
+
+@app.route('/api/user/register', methods=['POST'])
+def register_username():
+    """Register a new unique username"""
+    if not redis_client:
+        return jsonify({'error': 'Database unavailable'}), 503
+    
+    data = request.get_json()
+    if not data or 'username' not in data:
+        return jsonify({'error': 'Username is required'}), 400
+    
+    username = data['username'].strip()
+    
+    # Validation
+    if len(username) < 3 or len(username) > 20:
+        return jsonify({'error': 'Username must be 3-20 characters'}), 400
+    
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', username):
+        return jsonify({'error': 'Only letters, numbers, and underscores allowed'}), 400
+    
+    key = f"users:name:{username.lower()}"
+    existing = redis_client.get(key)
+    if existing is not None:
+        return jsonify({'error': 'Username already taken'}), 409
+    
+    # Register
+    user_data = json.dumps({
+        'username': username,
+        'created_at': datetime.utcnow().isoformat()
+    })
+    redis_client.set(key, user_data)
+    redis_client.incr('users:count')
+    
+    return jsonify({
+        'success': True,
+        'username': username
+    }), 201
 
 
 if __name__ == '__main__':
