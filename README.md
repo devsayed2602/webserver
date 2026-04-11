@@ -55,3 +55,5 @@ The `generate-index.yml` workflow automatically:
 4. Commits the updated index
 
 This runs on every push to `main` that modifies files in `games/`.
+### users count 
+https://webserver-ecru.vercel.app/api/user/count
