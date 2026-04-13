@@ -1,12 +1,8 @@
-# Exclude large games directory (contains 66k+ files)
-games/
-
-# Standard excludes
-.git/
-.github/
-.vercel/
-.env
-__pycache__/
-*.pyc
+# Ignore Node.js files on Vercel so it strictly builds the Python Flask app
+package.json
+package-lock.json
 node_modules/
+netlify/
+netlify.toml
+# Skip loose game files - server reads from games.zip instead
 games/

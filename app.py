@@ -3,9 +3,11 @@ Steam Lua Patcher - Webserver
 Flask application to serve Lua files for the Steam Lua Patcher desktop app.
 """
 
-from flask import Flask, send_from_directory, jsonify, abort, request, Response
+from flask import Flask, send_from_directory, jsonify, abort, request, Response, send_file
 import os
 import json
+import io
+import zipfile
 from datetime import datetime
 from functools import wraps
 from dotenv import load_dotenv
@@ -38,8 +40,36 @@ else:
 
 # Directory containing all Lua game files
 GAMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games')
+GAMES_ZIP = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'games.zip')
 # Directory containing game fix zip files
 FIX_FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'game-fix-files')
+
+def get_lua_content(app_id):
+    """
+    Unified helper to get Lua content from either:
+    1. The 'games/' folder (direct file)
+    2. The 'games.zip' archive (compressed)
+    Returns (content_bytes, filename) or (None, None)
+    """
+    filename = f"{app_id}.lua"
+    
+    # 1. Check direct file system first
+    file_path = os.path.join(GAMES_DIR, filename)
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as f:
+            return f.read(), filename
+            
+    # 2. Check games.zip if it exists
+    if os.path.exists(GAMES_ZIP):
+        try:
+            with zipfile.ZipFile(GAMES_ZIP, 'r') as zf:
+                if filename in zf.namelist():
+                    with zf.open(filename) as f:
+                        return f.read(), filename
+        except Exception as e:
+            print(f"Error reading {GAMES_ZIP}: {e}")
+            
+    return None, None
 
 def require_token(f):
     @wraps(f)
@@ -192,14 +222,14 @@ def admin_panel():
 @require_token
 def serve_lua(filename):
     """Serve a specific Lua file by filename (e.g., 730.lua)"""
-    if not filename.endswith('.lua'):
-        filename = f"{filename}.lua"
+    # Extract app_id from filename
+    app_id = filename.replace('.lua', '')
     
-    file_path = os.path.join(GAMES_DIR, filename)
-    if not os.path.exists(file_path):
-        abort(404, description=f"Lua file '{filename}' not found")
+    content, actual_filename = get_lua_content(app_id)
+    if not content:
+        abort(404, description=f"Lua file '{filename}' not found in folder or ZIP")
     
-    return send_from_directory(GAMES_DIR, filename, mimetype='text/plain')
+    return Response(content, mimetype='text/plain')
 
 
 @app.route('/fix/<filename>')
@@ -229,15 +259,49 @@ def serve_index():
     abort(404, description="games_index.json not found. Run generate_index.py first.")
 
 
+@app.route('/api/free-download')
+def free_download():
+    """Download a game Lua file packaged as a ZIP archive"""
+    app_id = request.args.get('appid')
+    if not app_id:
+        return jsonify({'error': 'Missing appid parameter'}), 400
+    
+    # Clean app_id to prevent path traversal
+    import re
+    app_id = re.sub(r'[^0-9]', '', str(app_id))
+    
+    content, filename = get_lua_content(app_id)
+    if not content:
+        return jsonify({'error': f'Game patch {app_id} not found in store'}), 404
+    
+    try:
+        # Create ZIP in memory for the single requested file
+        memory_file = io.BytesIO()
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr(filename, content)
+        
+        memory_file.seek(0)
+        
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=f"{app_id}_patch.zip"
+        )
+    except Exception as e:
+        return jsonify({'error': 'Generation failed', 'message': str(e)}), 500
+
+
+
+
 @app.route('/api/check/<app_id>')
 @require_token
 def check_availability(app_id):
     """Check if a specific app ID has a Lua file available"""
-    file_path = os.path.join(GAMES_DIR, f"{app_id}.lua")
-    exists = os.path.exists(file_path)
+    content, _ = get_lua_content(app_id)
     return jsonify({
         'app_id': app_id,
-        'available': exists
+        'available': content is not None
     })
 
 
