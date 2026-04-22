@@ -135,8 +135,6 @@ def register_user():
     user_data = {
         'username': username,
         'password_hash': generate_password_hash(password),
-        'level': 1,
-        'xp': 0,
         'games_patched': 0
     }
     
@@ -177,7 +175,7 @@ def handle_profile():
     if request.method == 'POST':
         updates = request.get_json()
         # Allowed fields to update
-        valid_updates = {k: v for k, v in updates.items() if k in ['level', 'xp', 'games_patched', 'avatar_url', 'total_playtime']}
+        valid_updates = {k: v for k, v in updates.items() if k in ['games_patched', 'avatar_url', 'total_playtime']}
         supabase.table('profiles').update(valid_updates).eq('username', username).execute()
         
     res = supabase.table('profiles').select('*').eq('username', username).execute()
@@ -186,6 +184,17 @@ def handle_profile():
     user = res.data[0]
     if 'password_hash' in user: del user['password_hash']
     return jsonify(user)
+
+@app.route('/api/user/heartbeat', methods=['POST'])
+def user_heartbeat():
+    if not supabase: return jsonify({'error': 'Database unavailable'}), 503
+    username = request.args.get('username')
+    if not username: return jsonify({'error': 'Username required'}), 400
+    
+    from datetime import timezone
+    now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    supabase.table('profiles').update({'last_seen': now}).eq('username', username).execute()
+    return jsonify({'status': 'online', 'timestamp': now})
 
 # --- NEW Social Endpoints ---
 
@@ -234,8 +243,31 @@ def get_friends():
         
     if not friend_ids: return jsonify([])
     
-    friends_profiles = supabase.table('profiles').select('username, level, xp, avatar_url').in_('id', friend_ids).execute()
-    return jsonify(friends_profiles.data)
+    friends_profiles = supabase.table('profiles').select('username, avatar_url, last_seen').in_('id', friend_ids).execute()
+    
+    # Calculate online status (active in last 5 minutes)
+    enriched_friends = []
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    for friend in friends_profiles.data:
+        is_online = False
+        if friend.get('last_seen'):
+            try:
+                # Make timezone aware
+                last_seen_str = friend['last_seen']
+                if not last_seen_str.endswith('Z') and '+' not in last_seen_str:
+                    last_seen_str += 'Z'
+                last_seen = datetime.fromisoformat(last_seen_str.replace('Z', '+00:00'))
+                diff = (now - last_seen).total_seconds()
+                is_online = diff < 300 # 5 minutes
+            except Exception as e:
+                print(f"Error parsing date: {e}")
+                is_online = False
+        
+        friend['online'] = is_online
+        enriched_friends.append(friend)
+        
+    return jsonify(enriched_friends)
 
 @app.route('/api/social/requests/pending')
 def get_pending():
