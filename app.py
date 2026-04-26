@@ -310,21 +310,25 @@ def accept_request():
 
 @app.route('/api/social/chat/send', methods=['POST'])
 def send_chat_message():
-    data = request.get_json()
-    sender = data.get('sender')
-    receiver = data.get('receiver')
-    message = data.get('message')
-    
-    if not all([sender, receiver, message]):
-        return jsonify({'error': 'Missing data'}), 400
+    try:
+        data = request.get_json()
+        sender = data.get('sender')
+        receiver = data.get('receiver')
+        message = data.get('message')
         
-    res = supabase.table('chat_messages').insert({
-        'sender_username': sender,
-        'receiver_username': receiver,
-        'message_text': message
-    }).execute()
-    
-    return jsonify({'success': True, 'data': res.data})
+        if not all([sender, receiver, message]):
+            return jsonify({'error': 'Missing data'}), 400
+            
+        res = supabase.table('chat_messages').insert({
+            'sender_username': sender,
+            'receiver_username': receiver,
+            'message_text': message
+        }).execute()
+        
+        return jsonify({'success': True, 'data': res.data})
+    except Exception as e:
+        import traceback
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
 @app.route('/api/social/chat/history')
 def get_chat_history():
