@@ -91,9 +91,9 @@ def health_check():
 @app.route('/api/app/latest-release')
 def latest_release():
     return jsonify({
-        'version': '1.3.6',
-        'message': 'No updates available.',
-        'url': ''
+        'version': '1.4.5',
+        'message': 'Official v1.4.5 Release: Added In-App Updater and Integrated Chat System!',
+        'url': 'https://github.com/devsayed2602/luapatcher/releases/download/1.4.5/LuaPatcher_Setup.exe'
     })
 
 @app.route('/api/games_index.json')
