@@ -308,6 +308,41 @@ def accept_request():
     supabase.table('friendships').update({'status': 'accepted'}).eq('user_id', fid).eq('friend_id', uid).execute()
     return jsonify({'success': True})
 
+@app.route('/api/social/chat/send', methods=['POST'])
+def send_chat_message():
+    data = request.get_json()
+    sender = data.get('sender')
+    receiver = data.get('receiver')
+    message = data.get('message')
+    
+    if not all([sender, receiver, message]):
+        return jsonify({'error': 'Missing data'}), 400
+        
+    res = supabase.table('chat_messages').insert({
+        'sender_username': sender,
+        'receiver_username': receiver,
+        'message_text': message
+    }).execute()
+    
+    return jsonify({'success': True, 'data': res.data})
+
+@app.route('/api/social/chat/history')
+def get_chat_history():
+    user1 = request.args.get('user1')
+    user2 = request.args.get('user2')
+    
+    if not user1 or not user2:
+        return jsonify({'error': 'Missing users'}), 400
+        
+    # Fetch conversation history between two users
+    # Filter: (sender=user1 AND receiver=user2) OR (sender=user2 AND receiver=user1)
+    res = supabase.table('chat_messages').select('*').or_(
+        f'and(sender_username.eq.{user1},receiver_username.eq.{user2}),'
+        f'and(sender_username.eq.{user2},receiver_username.eq.{user1})'
+    ).order('created_at', desc=False).execute()
+    
+    return jsonify(res.data)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
  
