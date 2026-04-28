@@ -308,6 +308,24 @@ def accept_request():
     supabase.table('friendships').update({'status': 'accepted'}).eq('user_id', fid).eq('friend_id', uid).execute()
     return jsonify({'success': True})
 
+@app.route('/api/social/friends/remove', methods=['POST'])
+def remove_friend():
+    data = request.get_json()
+    user1_name = data.get('username')
+    user2_name = data.get('friend_username')
+    
+    u1 = supabase.table('profiles').select('id').eq('username', user1_name).execute()
+    u2 = supabase.table('profiles').select('id').eq('username', user2_name).execute()
+    
+    if not u1.data or not u2.data: return jsonify({'error': 'User not found'}), 404
+    id1, id2 = u1.data[0]['id'], u2.data[0]['id']
+    
+    # Friendship could be stored as (id1, id2) or (id2, id1)
+    supabase.table('friendships').delete().eq('user_id', id1).eq('friend_id', id2).execute()
+    supabase.table('friendships').delete().eq('user_id', id2).eq('friend_id', id1).execute()
+    
+    return jsonify({'success': True})
+
 @app.route('/api/social/chat/send', methods=['POST'])
 def send_chat_message():
     try:
