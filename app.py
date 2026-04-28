@@ -183,7 +183,7 @@ def handle_profile():
     if request.method == 'POST':
         updates = request.get_json()
         # Allowed fields to update
-        valid_updates = {k: v for k, v in updates.items() if k in ['games_patched', 'avatar_url', 'total_playtime']}
+        valid_updates = {k: v for k, v in updates.items() if k in ['games_patched', 'avatar_url', 'total_playtime', 'played_games', 'rotation_games']}
         supabase.table('profiles').update(valid_updates).eq('username', username).execute()
         
     res = supabase.table('profiles').select('*').eq('username', username).execute()
