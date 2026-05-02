@@ -365,6 +365,14 @@ def get_chat_history():
     
     return jsonify(res.data)
 
+@app.route('/api/app/latest-release')
+def latest_release():
+    return jsonify({
+        'version': '1.4.7',
+        'message': 'Update 1.4.7 is now available! Featuring a polished User Profile UI, smooth animations, dynamic game descriptions, and new Discord integration.',
+        'url': 'https://github.com/devsayed2602/luapatcher/releases/tag/1.4.7'
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
  
