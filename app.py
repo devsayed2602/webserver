@@ -362,7 +362,7 @@ def latest_release():
     return jsonify({
         'version': '1.4.7',
         'message': 'Update 1.4.7 is now available! Featuring a polished User Profile UI, smooth animations, dynamic game descriptions, and new Discord integration.',
-        'url': 'https://github.com/devsayed2602/luapatcher/releases/tag/1.4.7'
+        'url': 'https://github.com/devsayed2602/luapatcher/releases/download/1.4.7/LuaPatcher_Setup.exe'
     })
 
 if __name__ == '__main__':
