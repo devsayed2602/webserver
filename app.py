@@ -88,14 +88,6 @@ def health_check():
         'version': '2.0.0'
     })
 
-@app.route('/api/app/latest-release')
-def latest_release():
-    return jsonify({
-        'version': '1.4.6',
-        'message': 'Official v1.4.6 Release: New User Profile System, Game Widgets, and Chat UI Improvements!',
-        'url': 'https://github.com/devsayed2602/luapatcher/releases/download/1.4.6/LuaPatcher_Setup.exe'
-    })
-
 @app.route('/api/games_index.json')
 @require_token
 def serve_index():
